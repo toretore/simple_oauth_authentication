@@ -1,0 +1,7 @@
+en:
+  simple_authentication:
+    authenticators:
+      oauth:
+        name: OAuth
+        link: Log in using OAuth
+  simple_oauth_authentication:
