@@ -17,12 +17,12 @@ module SimpleOauthAuthentication
       #Returns an OAuth::Consumer using the oauth_consumer_key and oauth_consumer_secret for the provider
       #defined in oauth_site
       def oauth_consumer
-        @oauth_consumer ||= OAuth::Consumer.new(oauth_consumer_key, oauth_consumer_secret, :site => oauth_site)
+        @oauth_consumer ||= OAuth::Consumer.new(oauth_consumer_key, oauth_consumer_secret, oauth_consumer_parameters)
       end
 
       #
       def oauth_access_token
-        @oauth_access_token ||= oauth_request_token.get_access_token(:oauth_verifier => oauth_verifier)
+        @oauth_access_token ||= oauth_request_token.get_access_token({:oauth_verifier => oauth_verifier}, oauth_access_token_parameters)
       end
 
       #Set the OAuth request token. Returns token.
@@ -43,8 +43,20 @@ module SimpleOauthAuthentication
           OAuth::RequestToken.new(oauth_consumer, session[:oauth_token], session[:oauth_secret])
         else
           #If this is the initial request, request a request token/secret which will be stored in the session
-          oauth_consumer.get_request_token(:oauth_callback => oauth_callback_url)
+          oauth_consumer.get_request_token({:oauth_callback => oauth_callback_url}, oauth_request_token_parameters)
         end
+      end
+
+      def oauth_consumer_parameters
+        {:site => oauth_site}
+      end
+
+      def oauth_request_token_parameters
+        {}
+      end
+
+      def oauth_access_token_parameters
+        {}
       end
 
       def oauth_verifier
