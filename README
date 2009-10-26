@@ -1,13 +1,31 @@
 SimpleOauthAuthentication
 =========================
 
-Introduction goes here.
+Adds OAuth authentication (and authorization of access to a provider's resources)
+to the SimpleAuthentication plugin.
 
 
 Example
 =======
 
-Example goes here.
+class LoginsController
+
+  def complete_oauth_login
+    self.current_user = User.do_something_with_twitter_info(JSON.parse(oauth_access_token.get("/profile.json")))
+  end
+
+  def oauth_site
+    "http://twitter.com"
+  end
+
+end
 
 
-Copyright (c) 2009 [name of plugin creator], released under the MIT license
+POST /logins/oauth
+
+[User authorizes access]
+
+GET /logins/oauth/complete
+
+
+Copyright (c) 2009 Tore Darell, released under the MIT license
