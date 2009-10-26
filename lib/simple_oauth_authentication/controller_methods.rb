@@ -3,29 +3,49 @@ module SimpleOauthAuthentication
     module Logins
 
 
+      #This method handles the second and last part of the OAuth authentication
+      #procedure. Once the user has approved access to his resources, the provider
+      #redirects him back here to be authenticated with your system.
+      #
+      #Note that when reaching this method, you can get the access token for the
+      #user's resources using the oauth_access_token method.
+      def complete_oauth_login
+        raise NotImplementedError, "You must define what 'complete oauth login' means"
+      end
+
+
     private
 
+      #Performs the initial step of the authentication. What happens is a request token
+      #is retrieved from the provider and the user gets redirected to the provider to
+      #authorize that token. Once the user has done this the provider will redirect him
+      #back to oauth_callback_url, which by default is the complete_oauth_login method.
       def oauth_authentication
         redirect_to oauth_request_token.authorize_url
       end
 
-      #Is this a "confirm" request? I.e. was the user redirected here by the provider?
+      #Is this a "confirm" request? I.e. was the user redirected here by the provider
+      #after authorizing access to his data?
       def oauth_confirm?
         oauth_verifier.present?
       end
 
-      #Returns an OAuth::Consumer using the oauth_consumer_key and oauth_consumer_secret for the provider
-      #defined in oauth_site
+      #Returns an OAuth::Consumer using the oauth_consumer_key and oauth_consumer_secret
+      #for the provider defined in oauth_site
       def oauth_consumer
         @oauth_consumer ||= OAuth::Consumer.new(oauth_consumer_key, oauth_consumer_secret, oauth_consumer_parameters)
       end
 
-      #
+      #The access token is used to access the user's resources from the provider. This is
+      #usually only available in the second part of the auth procedure, when the provider
+      #returns a "verifier" which can be used to exchange the request token for an access
+      #token.
       def oauth_access_token
         @oauth_access_token ||= oauth_request_token.get_access_token({:oauth_verifier => oauth_verifier}, oauth_access_token_parameters)
       end
 
-      #Set the OAuth request token. Returns token.
+      #Set the OAuth request token. Returns token. Also saves the token and
+      #secret in the session for later usage.
       def oauth_request_token=(token)
         session[:oauth_token], session[:oauth_secret] = token.token, token.secret
         @oauth_request_token = token
@@ -47,47 +67,55 @@ module SimpleOauthAuthentication
         end
       end
 
+
+      #Parameters used when creating the OAuth::Consumer. If the provider doesn't
+      #support automatic discover of endpoint URLs you probably want to add those
+      #here.
       def oauth_consumer_parameters
         {:site => oauth_site}
       end
 
+      #Parameters sent to the provider when asking for a request token.
       def oauth_request_token_parameters
         {}
       end
 
+      #Parameters sent to the provider when asking for an access token.
       def oauth_access_token_parameters
         {}
       end
 
+      #The "verifier" is sent back by the provider when a user approves access.
+      #This method by default just plucks it out of the params.
       def oauth_verifier
         params[:oauth_verifier]
       end
 
-      #The OAuth provider (like Twitter)
+      #The OAuth provider. Should return a string like "http://twitter.com"
       def oauth_site
-        "http://twitter.com"
+        raise NotImplementedError, "Define the URL to the OAuth site you want to authenticate with"
       end
 
-      #After getting a request token, the user gets redirected to the OAuth provider (like Twitter). The provider
-      #then redirects the user back to this URL, which performs the actual authentication. Both the initial and
-      #the second request use the same URL and are distinguished by the presence of the oauth_verifier parameter,
-      #which is done in oauth_confirm?
+      #Which URL the provider should redirect the user to after approving access.
+      #The default URL resolves to the complete_oauth_login action.
       def oauth_callback_url
         complete_oauth_login_url
       end
 
-      #The OAuth consumer key is a site-specific key for each consumer (=your site) that needs
-      #to access it.
+      #The OAuth consumer key is a site-specific key for each consumer
+      #(=your site) that needs to access it. By default this gets looked up
+      #using the I18n key simple_oauth_authentication.consumer_key
+      #
+      #TODO: Actually, this is pretty stupid. Change it.
       def oauth_consumer_key
         I18n.t('simple_oauth_authentication.consumer_key')
-        "yEFJlVqSOwQ8piPukGiD0w"
       end
 
-      #The OAuth consumer secret is a site-specific "secret" which goes along with the consumer
-      #key for each consumer.
+      #The OAuth consumer secret is a site-specific "secret" which goes
+      #along with the consumer key for each consumer. By default this gets
+      #looked up using the I18n key simple_oauth_authentication.consumer_secret
       def oauth_consumer_secret
         I18n.t('simple_oauth_authentication.consumer_secret')
-        "ldoX4YIcBsIcfC6MxtPzmJ3yD2pRAAAkvB4cppBp68"
       end
 
 
